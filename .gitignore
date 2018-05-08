@@ -1,0 +1,6 @@
+.DS_Store
+build
+data
+pdm
+__pycache__
+*.so
