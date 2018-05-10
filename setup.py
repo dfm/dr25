@@ -24,9 +24,10 @@ ext_modules = [
         extra_compile_args=args,
     ),
     Extension(
-        "dr25.quad_op",
+        "dr25.ops",
         [os.path.join("dr25", "quad_op.cc"),
-         os.path.join("dr25", "quad_rev_op.cc")],
+         os.path.join("dr25", "quad_rev_op.cc"),
+         os.path.join("dr25", "interp_op.cc")],
         include_dirs=["dr25", ],
         language="c++",
         extra_compile_args=args+tf.sysconfig.get_compile_flags(),
