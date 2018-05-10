@@ -6,5 +6,5 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(quad, m) {
-  m.def("quad", py::vectorize(batman::quad));
+  m.def("quad", py::vectorize(batman::quad<double>));
 }
