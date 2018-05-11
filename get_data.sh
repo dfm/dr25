@@ -12,7 +12,12 @@ wget -O data/kplr_dr25_inj3_tces.txt https://exoplanetarchive.ipac.caltech.edu/d
 
 wget -O data/q1_q17_dr25_stellar.txt "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=q1_q17_dr25_stellar&format=ipac&select=*"
 
-wget -O data/wget_PDM.bat https://exoplanetarchive.ipac.caltech.edu/bulk_data_download/wget_PDM.bat
+wget -O data/FLTI-DR25-KSOC-5006.tar.gz https://exoplanetarchive.ipac.caltech.edu/data/KeplerData/Simulated/FLTI-DR25-KSOC-5006.tar.gz
+cd data
+tar -xf FLTI-DR25-KSOC-5006.tar.gz
+cd ..
 
-echo "downloading planet detection metrics..."
-cat data/wget_PDM.bat | grep fits | awk '{print $4}' | xargs -n 1 -P 24 wget --quiet -P data/pdm -x -nH -nc --cut-dirs=2
+# This is too much data!
+#wget -O data/wget_PDM.bat https://exoplanetarchive.ipac.caltech.edu/bulk_data_download/wget_PDM.bat
+#echo "downloading planet detection metrics..."
+#cat data/wget_PDM.bat | grep fits | awk '{print $4}' | xargs -n 1 -P 24 wget --quiet -P data/pdm -x -nH -nc --cut-dirs=2
