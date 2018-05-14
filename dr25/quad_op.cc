@@ -18,10 +18,11 @@ REGISTER_OP("Quad")
   .Output("flux: T")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     shape_inference::ShapeHandle s;
+    shape_inference::DimensionHandle d;
     TF_RETURN_IF_ERROR(c->Merge(c->input(0), c->input(1), &s));
     TF_RETURN_IF_ERROR(c->Merge(s, c->input(2), &s));
-    TF_RETURN_IF_ERROR(c->Merge(s, c->input(3), &s));
-    c->set_output(0, s);
+    TF_RETURN_IF_ERROR(c->Merge(c->Dim(s, 0), c->Dim(c->input(3), 0), &d));
+    c->set_output(0, c->input(3));
     return Status::OK();
   });
 
@@ -38,10 +39,11 @@ class QuadOp : public OpKernel {
     const Tensor& z_tensor = context->input(3);
 
     // Dimensions
-    const int64 N = g1_tensor.NumElements();
+    int64 N = g1_tensor.NumElements();
+    int64 M = z_tensor.dim_size(z_tensor.dims() - 1);
     OP_REQUIRES(context, (g2_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
     OP_REQUIRES(context, (p_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
-    OP_REQUIRES(context, (z_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
+    OP_REQUIRES(context, (z_tensor.NumElements() == N * M), errors::InvalidArgument("all inputs must have matching shapes"));
 
     // Output
     Tensor* flux_tensor = NULL;
@@ -55,7 +57,9 @@ class QuadOp : public OpKernel {
     auto flux = flux_tensor->template flat<T>();
 
     for (int64 n = 0; n < N; ++n) {
-      flux(n) = batman::quad<T>(g1(n), g2(n), p(n), z(n));
+      for (int64 m = 0; m < M; ++m) {
+        flux(n) = batman::quad<T>(g1(n), g2(n), p(n), z(n * M + m));
+      }
     }
   }
 };
@@ -63,7 +67,7 @@ class QuadOp : public OpKernel {
 
 #define REGISTER_KERNEL(type)                                                 \
   REGISTER_KERNEL_BUILDER(                                                    \
-      Name("Quad").Device(DEVICE_CPU).TypeConstraint<type>("T"), \
+      Name("Quad").Device(DEVICE_CPU).TypeConstraint<type>("T"),              \
       QuadOp<type>)
 
 REGISTER_KERNEL(float);

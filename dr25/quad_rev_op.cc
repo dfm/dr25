@@ -22,15 +22,16 @@ REGISTER_OP("QuadRev")
   .Output("bp: T")
   .Output("bz: T")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
-    shape_inference::ShapeHandle s;
+    shape_inference::ShapeHandle s, z;
+    shape_inference::DimensionHandle d;
     TF_RETURN_IF_ERROR(c->Merge(c->input(0), c->input(1), &s));
     TF_RETURN_IF_ERROR(c->Merge(s, c->input(2), &s));
-    TF_RETURN_IF_ERROR(c->Merge(s, c->input(3), &s));
-    TF_RETURN_IF_ERROR(c->Merge(s, c->input(4), &s));
+    TF_RETURN_IF_ERROR(c->Merge(c->Dim(s, 0), c->Dim(c->input(3), 0), &d));
+    TF_RETURN_IF_ERROR(c->Merge(c->input(3), c->input(4), &z));
     c->set_output(0, s);
     c->set_output(1, s);
     c->set_output(2, s);
-    c->set_output(3, s);
+    c->set_output(3, z);
     return Status::OK();
   });
 
@@ -49,19 +50,20 @@ class QuadRevOp : public OpKernel {
 
     // Dimensions
     const int64 N = g1_tensor.NumElements();
+    int64 M = z_tensor.dim_size(z_tensor.dims() - 1);
     OP_REQUIRES(context, (g2_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
     OP_REQUIRES(context, (p_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
-    OP_REQUIRES(context, (z_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
-    OP_REQUIRES(context, (bflux_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
+    OP_REQUIRES(context, (z_tensor.NumElements() == N * M), errors::InvalidArgument("all inputs must have matching shapes"));
+    OP_REQUIRES(context, (bflux_tensor.NumElements() == N * M), errors::InvalidArgument("all inputs must have matching shapes"));
 
     // Output
     Tensor* bg1_tensor = NULL;
     Tensor* bg2_tensor = NULL;
     Tensor* bp_tensor = NULL;
     Tensor* bz_tensor = NULL;
-    OP_REQUIRES_OK(context, context->allocate_output(0, z_tensor.shape(), &bg1_tensor));
-    OP_REQUIRES_OK(context, context->allocate_output(1, z_tensor.shape(), &bg2_tensor));
-    OP_REQUIRES_OK(context, context->allocate_output(2, z_tensor.shape(), &bp_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(0, g1_tensor.shape(), &bg1_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(1, g2_tensor.shape(), &bg2_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(2, p_tensor.shape(), &bp_tensor));
     OP_REQUIRES_OK(context, context->allocate_output(3, z_tensor.shape(), &bz_tensor));
 
     // Access the data
@@ -80,14 +82,20 @@ class QuadRevOp : public OpKernel {
     for (int64 n = 0; n < N; ++n) {
       Eigen::AutoDiffScalar<DerType> ad_g1(g1(n), 4, 0),
                                      ad_g2(g2(n), 4, 1),
-                                     ad_p(p(n), 4, 2),
-                                     ad_z(z(n), 4, 3);
-      auto f = batman::quad(ad_g1, ad_g2, ad_p, ad_z);
-      auto d = f.derivatives();
-      bg1(n) = bflux(n) * d(0);
-      bg2(n) = bflux(n) * d(1);
-      bp(n) = bflux(n) * d(2);
-      bz(n) = bflux(n) * d(3);
+                                     ad_p(p(n), 4, 2);
+      bg1(n) = 0.0;
+      bg2(n) = 0.0;
+      bp(n) = 0.0;
+      for (int64 m = 0; m < M; ++m) {
+        int64 i = n * M + m;
+        Eigen::AutoDiffScalar<DerType> ad_z(z(i), 4, 3);
+        auto f = batman::quad(ad_g1, ad_g2, ad_p, ad_z);
+        auto d = f.derivatives();
+        bg1(n) += bflux(i) * d(0);
+        bg2(n) += bflux(i) * d(1);
+        bp(n) += bflux(i) * d(2);
+        bz(i) = bflux(i) * d(3);
+      }
     }
   }
 };
