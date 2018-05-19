@@ -40,7 +40,11 @@ class QuadOp : public OpKernel {
 
     // Dimensions
     int64 N = g1_tensor.NumElements();
-    int64 M = z_tensor.dim_size(z_tensor.dims() - 1);
+    int64 M = 1;
+    if (z_tensor.dims() > g1_tensor.dims()) {
+      OP_REQUIRES(context, (z_tensor.dims() == g1_tensor.dims() + 1), errors::InvalidArgument("invalid dimensions"));
+      M = z_tensor.dim_size(z_tensor.dims() - 1);
+    }
     OP_REQUIRES(context, (g2_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
     OP_REQUIRES(context, (p_tensor.NumElements() == N), errors::InvalidArgument("all inputs must have matching shapes"));
     OP_REQUIRES(context, (z_tensor.NumElements() == N * M), errors::InvalidArgument("all inputs must have matching shapes"));
