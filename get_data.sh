@@ -11,6 +11,7 @@ wget -O data/kplr_dr25_inj2_tces.txt https://exoplanetarchive.ipac.caltech.edu/d
 wget -O data/kplr_dr25_inj3_tces.txt https://exoplanetarchive.ipac.caltech.edu/data/KeplerData/Simulated/kplr_dr25_inj3_tces.txt
 
 wget -O data/q1_q17_dr25_stellar.txt "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=q1_q17_dr25_stellar&format=ipac&select=*"
+wget -O data/q1_q17_dr25_koi.txt "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=q1_q17_dr25_koi&format=ipac&select=*"
 
 wget -O data/FLTI-DR25-KSOC-5006.tar.gz https://exoplanetarchive.ipac.caltech.edu/data/KeplerData/Simulated/FLTI-DR25-KSOC-5006.tar.gz
 cd data
