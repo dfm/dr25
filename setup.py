@@ -8,7 +8,8 @@ import numpy
 import pybind11
 import tensorflow as tf
 
-args = ["-O2", "-std=c++14", "-stdlib=libc++"]
+args = ["-O2", "-std=c++14", "-stdlib=libc++",
+        "-march=native", "-mmacosx-version-min=10.9"]
 ext_modules = [
     Extension(
         "dr25.quad",
