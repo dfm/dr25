@@ -8,8 +8,8 @@ import numpy
 import pybind11
 import tensorflow as tf
 
-args = ["-O2", "-std=c++14", "-stdlib=libc++",
-        "-march=native", "-mmacosx-version-min=10.9"]
+link_args = ["-march=native", "-mmacosx-version-min=10.9"]
+args = ["-O2", "-std=c++14", "-stdlib=libc++"] + link_args
 ext_modules = [
     Extension(
         "dr25.quad",
@@ -23,6 +23,7 @@ ext_modules = [
         ],
         language="c++",
         extra_compile_args=args,
+        extra_link_args=link_args,
     ),
     Extension(
         "dr25.ops",
@@ -32,7 +33,7 @@ ext_modules = [
         include_dirs=["dr25", ],
         language="c++",
         extra_compile_args=args+tf.sysconfig.get_compile_flags(),
-        extra_link_args=tf.sysconfig.get_link_flags(),
+        extra_link_args=tf.sysconfig.get_link_flags() + link_args,
     ),
 ]
 
